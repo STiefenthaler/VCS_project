@@ -35,12 +35,12 @@ video_to_lane_map = {
 
 # Lane polygons for considering only vehicles within the lanes
 lane_data = {
-    "foggy_lane_1": [[124, 286], [91, 286], [56, 545], [180, 549]],
-    "foggy_lane_2": [[127, 291], [155, 290], [303, 579], [191, 577]],
+    "foggy_lane_1": [[124, 286], [91, 286], [56, 578], [180, 578]],
+    "foggy_lane_2": [[127, 286], [155, 286], [303, 578], [191, 578]],
     "foggy_lane_3": [[202, 283], [349, 402], [353, 353], [233, 285]],
     "foggy_lane_4": [[237, 285], [258, 282], [357, 329], [350, 354]],
     "sunny_heavy_lane_1": [[234, 153], [6, 249], [140, 322], [280, 163]],
-    "sunny_heavy_lane_2": [[295, 153], [158, 329], [253, 335], [314, 155]],
+    "sunny_heavy_lane_2": [[290, 153], [140, 329], [253, 335], [314, 155]], #oben links, unten links
     "sunny_heavy_lane_3": [[337, 155], [369, 329], [464, 339], [359, 160]],
     "sunny_heavy_lane_4": [[362, 164], [476, 337], [637, 243], [438, 160]],
 }
@@ -60,7 +60,7 @@ video_line_positions = {
 def get_line_positions(video_name):
     return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
 
-def detect_vehicles(model, cap, video_name):
+def detect_vehicles(model, cap, video_name, output_file):
     class_list = model.names
 
     # Get the line positions for the current video
@@ -76,6 +76,10 @@ def detect_vehicles(model, cap, video_name):
 
     relevant_lanes = get_relevant_lanes(video_name)
     lane_polygons = {name: np.array(coords, dtype=np.int32) for name, coords in relevant_lanes.items()}
+
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    output = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -105,7 +109,7 @@ def detect_vehicles(model, cap, video_name):
             # Draw the lane polygons
             for lane_name, polygon in lane_polygons.items():
                 cv2.polylines(frame, [polygon], isClosed=True, color=(255, 0, 0), thickness=1)
-                cv2.putText(frame, lane_name, tuple(polygon[0]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                #cv2.putText(frame, lane_name, tuple(polygon[0]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
             # Loop through each detected object
             for box, track_id, class_idx, conf in zip(boxes, track_ids, class_indices, confidences):
@@ -147,6 +151,7 @@ def detect_vehicles(model, cap, video_name):
             print("No detections in this frame or no track IDs available.")
 
         # Show the frame
+        output.write(frame)
         cv2.imshow("YOLO Object Tracking & Counting", frame)
 
         # Exit loop if 'q' key is pressed
@@ -155,7 +160,8 @@ def detect_vehicles(model, cap, video_name):
 
     # Release resources
     cap.release()
+    output.release()  
     cv2.destroyAllWindows()
 
 # Final detection step
-detect_vehicles(yolo11, medium_fog_vid, 'foggy_road.mp4')
+detect_vehicles(yolo11, medium_fog_vid, 'foggy_road.mp4', 'output.mp4')
