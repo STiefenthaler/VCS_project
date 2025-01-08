@@ -50,14 +50,28 @@ def get_relevant_lanes(video_name):
     return {name: coords for name, coords in lane_data.items() if name.startswith(prefix)}
 
 
+# Define line positions for each video
+video_line_positions = {
+    "foggy_road.mp4": {"incoming_line_y": 470, "outgoing_line_y": 295},
+    "heavy_foggy_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
+    "sunny_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
+}
+
+def get_line_positions(video_name):
+    return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
+
 def detect_vehicles(model, cap, video_name):
     class_list = model.names
-    line_y_red = 215 # Red line position
+
+    # Get the line positions for the current video
+    line_positions = get_line_positions(video_name)
+    incoming_line_y = line_positions["incoming_line_y"]
+    outgoing_line_y = line_positions["outgoing_line_y"]
 
     # Dictionaries to store counts by class and direction
     class_counts = {"incoming": defaultdict(int), "outgoing": defaultdict(int)}
 
-    # Set to keep track of object IDs that have crossed the line for each direction
+    # Set to keep track of object IDs that have crossed the lines
     crossed_ids = {"incoming": set(), "outgoing": set()}
 
     relevant_lanes = get_relevant_lanes(video_name)
@@ -71,26 +85,26 @@ def detect_vehicles(model, cap, video_name):
         # Run YOLO tracking on the frame
         results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7])  # Maintain only transportation-relevant classes
 
-        # Ensure results are not empty
         if results and results[0].boxes.data is not None:
-            # Safely access detected boxes, their class indices, and track IDs
             boxes = results[0].boxes.xyxy.cpu()
             track_ids = results[0].boxes.id
             class_indices = results[0].boxes.cls
             confidences = results[0].boxes.conf
 
-            # Convert to usable formats if not None
             track_ids = track_ids.int().cpu().tolist() if track_ids is not None else []
             class_indices = class_indices.int().cpu().tolist() if class_indices is not None else []
             confidences = confidences.cpu().tolist() if confidences is not None else []
 
-            # Draw the counting line
-            cv2.line(frame, (0, line_y_red), (frame.shape[1], line_y_red), (0, 0, 255), 2)
-            cv2.putText(frame, 'Counting line', (0, line_y_red - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            # Draw the incoming and outgoing lines
+            cv2.line(frame, (0, incoming_line_y), (frame.shape[1], incoming_line_y), (0, 255, 0), 2)
+            cv2.putText(frame, 'Incoming line', (0, incoming_line_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            
+            cv2.line(frame, (0, outgoing_line_y), (frame.shape[1], outgoing_line_y), (255, 0, 0), 2)
+            cv2.putText(frame, 'Outgoing line', (0, outgoing_line_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
             # Draw the lane polygons
             for lane_name, polygon in lane_polygons.items():
-                cv2.polylines(frame, [polygon], isClosed=True, color=(255, 0, 0), thickness=2)
+                cv2.polylines(frame, [polygon], isClosed=True, color=(255, 0, 0), thickness=1)
                 cv2.putText(frame, lane_name, tuple(polygon[0]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
             # Loop through each detected object
@@ -110,11 +124,11 @@ def detect_vehicles(model, cap, video_name):
                         cv2.putText(frame, f"ID: {track_id} {class_name}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-                        # Check if the object has crossed the line in the appropriate direction
-                        if direction == "incoming" and cy > line_y_red and track_id not in crossed_ids["incoming"]:
+                        # Check if the object has crossed the appropriate line
+                        if direction == "incoming" and cy > incoming_line_y and track_id not in crossed_ids["incoming"]:
                             crossed_ids["incoming"].add(track_id)
                             class_counts["incoming"][class_name] += 1
-                        elif direction == "outgoing" and cy < line_y_red and track_id not in crossed_ids["outgoing"]:
+                        elif direction == "outgoing" and cy < outgoing_line_y and track_id not in crossed_ids["outgoing"]:
                             crossed_ids["outgoing"].add(track_id)
                             class_counts["outgoing"][class_name] += 1
 
@@ -143,5 +157,5 @@ def detect_vehicles(model, cap, video_name):
     cap.release()
     cv2.destroyAllWindows()
 
-#final detection step
-detect_vehicles(yolo11, sunny_vid, 'sunny_road.mp4')
+# Final detection step
+detect_vehicles(yolo11, medium_fog_vid, 'foggy_road.mp4')
