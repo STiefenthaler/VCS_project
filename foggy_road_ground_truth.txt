@@ -1,0 +1,24 @@
+{
+"00:00.333": {"incoming": 1, "outgoing": 0},
+"00:01.199": {"incoming": 1, "outgoing": 1},
+"00:01.399": {"incoming": 1, "outgoing": 2},
+"00:02.133": {"incoming": 2, "outgoing": 2},
+"00:02.566": {"incoming": 2, "outgoing": 3},
+"00:03.133": {"incoming": 3, "outgoing": 3},
+"00:03.266": {"incoming": 3, "outgoing": 4},
+"00:03.833": {"incoming": 3, "outgoing": 5},
+"00:04.633": {"incoming": 5, "outgoing": 5},
+"00:05.633": {"incoming": 5, "outgoing": 6},
+"00:05.833": {"incoming": 6, "outgoing": 6},
+"00:06.033": {"incoming": 7, "outgoing": 6},
+"00:06.400": {"incoming": 7, "outgoing": 7},
+"00:07.299": {"incoming": 8, "outgoing": 7},
+"00:07.400": {"incoming": 8, "outgoing": 8}
+}
+
+
+
+
+
+
+
