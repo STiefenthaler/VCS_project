@@ -13,6 +13,7 @@ yolo11 = YOLO('yolo11l.pt')
 heavy_fog_vid = cv2.VideoCapture('heavy_foggy_road.mp4')
 medium_fog_vid = cv2.VideoCapture('foggy_road.mp4')
 sunny_vid = cv2.VideoCapture('sunny_road.mp4')
+rainy_vid = cv2.VideoCapture('rainy_road.mp4')
 
 # Assign directions to lanes
 lane_directions = {
@@ -20,6 +21,10 @@ lane_directions = {
     "foggy_lane_2": "incoming",
     "foggy_lane_3": "outgoing",
     "foggy_lane_4": "outgoing",
+    "rainy_lane_1": "incoming",
+    "rainy_lane_2": "incoming",
+    "rainy_lane_3": "outgoing",
+    "rainy_lane_4": "outgoing",
     "sunny_heavy_lane_1": "incoming",
     "sunny_heavy_lane_2": "incoming",
     "sunny_heavy_lane_3": "outgoing",
@@ -29,6 +34,7 @@ lane_directions = {
 # Map video names to lane prefixes
 video_to_lane_map = {
     "foggy_road.mp4": "foggy",
+    "rainy_road.mp4": "rainy",
     "heavy_foggy_road.mp4": "sunny_heavy",
     "sunny_road.mp4": "sunny_heavy",
 }
@@ -39,8 +45,12 @@ lane_data = {
     "foggy_lane_2": [[127, 286], [155, 286], [303, 578], [191, 578]],
     "foggy_lane_3": [[202, 283], [349, 402], [353, 353], [233, 285]],
     "foggy_lane_4": [[237, 285], [258, 282], [357, 329], [350, 354]],
+    "rainy_lane_1": [[37, 460],  [670, 261], [724, 276], [89, 509]],
+    "rainy_lane_2": [[88, 509],  [763, 266], [810, 268], [124, 542]],
+    "rainy_lane_3": [[384, 531], [881, 273], [929, 274], [529, 545]],
+    "rainy_lane_4": [[543, 545], [930, 268], [992, 273], [700, 555]],
     "sunny_heavy_lane_1": [[234, 153], [6, 249], [140, 322], [280, 163]],
-    "sunny_heavy_lane_2": [[290, 153], [140, 329], [253, 335], [314, 155]], #oben links, unten links
+    "sunny_heavy_lane_2": [[290, 153], [140, 329], [253, 335], [314, 155]], 
     "sunny_heavy_lane_3": [[337, 155], [369, 329], [464, 339], [359, 160]],
     "sunny_heavy_lane_4": [[362, 164], [476, 337], [637, 243], [438, 160]],
 }
@@ -55,6 +65,7 @@ video_line_positions = {
     "foggy_road.mp4": {"incoming_line_y": 470, "outgoing_line_y": 295},
     "heavy_foggy_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
     "sunny_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
+    "rainy_road.mp4": {"incoming_line_y": 450, "outgoing_line_y": 320},
 }
 
 def get_line_positions(video_name):
@@ -164,4 +175,4 @@ def detect_vehicles(model, cap, video_name, output_file):
     cv2.destroyAllWindows()
 
 # Final detection step
-detect_vehicles(yolo11, medium_fog_vid, 'foggy_road.mp4', 'output.mp4')
+detect_vehicles(yolo11, rainy_vid, 'rainy_road.mp4', 'Rainy_output.mp4')
