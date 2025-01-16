@@ -73,6 +73,7 @@ def get_line_positions(video_name):
 
 def detect_vehicles(model, cap, video_name, output_file):
     class_list = model.names
+    paused = False
 
     # Get the line positions for the current video
     line_positions = get_line_positions(video_name)
@@ -165,9 +166,22 @@ def detect_vehicles(model, cap, video_name, output_file):
         output.write(frame)
         cv2.imshow("YOLO Object Tracking & Counting", frame)
 
-        # Exit loop if 'q' key is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # Exit video if 'q' key is pressed
+        # Pause video if 'p' key is pressed
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'): 
             break
+        elif key == ord('p'):  
+            paused = not paused
+            while paused:
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord('p'):  # Riprendi
+                    paused = False
+                elif key == ord('q'):  # Esci
+                    paused = False
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    exit()
 
     # Release resources
     cap.release()
