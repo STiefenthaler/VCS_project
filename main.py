@@ -1,19 +1,20 @@
 from ultralytics import YOLO
+import argparse
 import cv2
 from collections import defaultdict
 import numpy as np
 
 # Load the YOLO models
-Fine_tuned_model = YOLO('yolov8_finetuned.pt')
-yolo8 = YOLO('yolov8m.pt')
-yolo11 = YOLO('yolo11l.pt')
+#Fine_tuned_model = YOLO('yolov8_finetuned.pt')
+#yolo8 = YOLO('yolov8m.pt')
+#yolo11 = YOLO('yolo11l.pt')
 
 
 # Open the video files
-heavy_fog_vid = cv2.VideoCapture('heavy_foggy_road.mp4')
-medium_fog_vid = cv2.VideoCapture('foggy_road.mp4')
-sunny_vid = cv2.VideoCapture('sunny_road.mp4')
-rainy_vid = cv2.VideoCapture('rainy_road.mp4')
+#heavy_fog_vid = cv2.VideoCapture('heavy_foggy_road.mp4')
+#medium_fog_vid = cv2.VideoCapture('foggy_road.mp4')
+#sunny_vid = cv2.VideoCapture('sunny_road.mp4')
+#rainy_vid = cv2.VideoCapture('rainy_road.mp4')
 
 # Assign directions to lanes
 lane_directions = {
@@ -72,6 +73,14 @@ def get_line_positions(video_name):
     return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
 
 def detect_vehicles(model, cap, video_name):
+    """
+    Processes the video using the specified YOLO model and applies vehicle detection.
+    Args:
+        model: The YOLO model used for detection.
+        video_cap: Video capture object.
+        video_name: Name of the video to use.
+    """
+    print(f"Processing video '{video_name}'...")
     class_list = model.names
     paused = False
 
@@ -91,7 +100,7 @@ def detect_vehicles(model, cap, video_name):
 
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    output = cv2.VideoWriter("output", cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
+    output = cv2.VideoWriter("output.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -188,5 +197,40 @@ def detect_vehicles(model, cap, video_name):
     output.release()  
     cv2.destroyAllWindows()
 
-# Final detection step
-detect_vehicles(yolo11, rainy_vid, 'rainy_road.mp4')
+def main():
+    """
+    Main method to run the detect_vehicles function with arguments specified via CLI.
+    --model to specify the YOLO model to use.
+    --video to specify the video file to process.
+    """
+    # Define the CLI arguments
+    parser = argparse.ArgumentParser(description="Run YOLO vehicle detection on a video.")
+    parser.add_argument(
+        "--model", 
+        required=True, 
+        choices=['yolov8_finetuned.pt', 'yolov8m.pt', 'yolo11l.pt'],
+        help="Path to the YOLO model to use for detection."
+    )
+    parser.add_argument(
+        "--video", 
+        required=True, 
+        choices=['heavy_foggy_road.mp4', 'foggy_road.mp4', 'sunny_road.mp4', 'rainy_road.mp4'],
+        help="Video file to process."
+    )
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Load the specified YOLO model
+    model = YOLO(args.model)
+
+    # Open the video file
+    video_cap = cv2.VideoCapture(args.video)
+    if not video_cap.isOpened():
+        raise FileNotFoundError(f"Could not open video file: {args.video}")
+
+    # Call detect_vehicles
+    detect_vehicles(model, video_cap, args.video)
+
+if __name__ == "__main__":
+    main()
