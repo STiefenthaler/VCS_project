@@ -4,18 +4,6 @@ import cv2
 from collections import defaultdict
 import numpy as np
 
-# Load the YOLO models
-#Fine_tuned_model = YOLO('yolov8_finetuned.pt')
-#yolo8 = YOLO('yolov8m.pt')
-#yolo11 = YOLO('yolo11l.pt')
-
-
-# Open the video files
-#heavy_fog_vid = cv2.VideoCapture('heavy_foggy_road.mp4')
-#medium_fog_vid = cv2.VideoCapture('foggy_road.mp4')
-#sunny_vid = cv2.VideoCapture('sunny_road.mp4')
-#rainy_vid = cv2.VideoCapture('rainy_road.mp4')
-
 # Assign directions to lanes
 lane_directions = {
     "foggy_lane_1": "incoming",
