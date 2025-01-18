@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 
 # Load the YOLO models
-Fine_tuned_model = YOLO('best.pt')
+Fine_tuned_model = YOLO('yolov8_finetuned.pt')
 yolo8 = YOLO('yolov8m.pt')
 yolo11 = YOLO('yolo11l.pt')
 
@@ -71,7 +71,7 @@ video_line_positions = {
 def get_line_positions(video_name):
     return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
 
-def detect_vehicles(model, cap, video_name, output_file):
+def detect_vehicles(model, cap, video_name):
     class_list = model.names
     paused = False
 
@@ -91,7 +91,7 @@ def detect_vehicles(model, cap, video_name, output_file):
 
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    output = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
+    output = cv2.VideoWriter("output", cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -189,4 +189,4 @@ def detect_vehicles(model, cap, video_name, output_file):
     cv2.destroyAllWindows()
 
 # Final detection step
-detect_vehicles(yolo11, rainy_vid, 'rainy_road.mp4', 'Rainy_output.mp4')
+detect_vehicles(yolo11, rainy_vid, 'rainy_road.mp4')
