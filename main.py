@@ -3,6 +3,7 @@ import argparse
 import cv2
 from collections import defaultdict
 import numpy as np
+from deep_sort_realtime.deepsort_tracker import DeepSort
 
 # Assign directions to lanes
 lane_directions = {
@@ -52,15 +53,15 @@ def get_relevant_lanes(video_name):
 # Define line positions for each video
 video_line_positions = {
     "foggy_road.mp4": {"incoming_line_y": 470, "outgoing_line_y": 295},
-    "heavy_foggy_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
-    "sunny_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
+    "heavy_foggy_road.mp4": {"incoming_line_y": 280, "outgoing_line_y": 190},
+    "sunny_road.mp4": {"incoming_line_y": 280, "outgoing_line_y": 190},
     "rainy_road.mp4": {"incoming_line_y": 450, "outgoing_line_y": 320},
 }
 
 def get_line_positions(video_name):
     return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
 
-def detect_vehicles(model, cap, video_name):
+def detect_vehicles(model, cap, video_name, tracker="default"):
     """
     Processes the video using the specified YOLO model and applies vehicle detection.
     Args:
@@ -68,7 +69,7 @@ def detect_vehicles(model, cap, video_name):
         video_cap: Video capture object.
         video_name: Name of the video to use.
     """
-    print(f"Processing video '{video_name}'...")
+    print(f"Processing video '{video_name}' with tracker '{tracker}'...")
     class_list = model.names
     paused = False
 
@@ -94,9 +95,16 @@ def detect_vehicles(model, cap, video_name):
         ret, frame = cap.read()
         if not ret:
             break
+        
+        print(tracker)
 
-        # Run YOLO tracking on the frame
-        results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7])  # Maintain only transportation-relevant classes
+        if tracker == "botsort":
+            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7], tracker="botsort.yaml")
+        elif tracker == "bytesort":
+            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7], tracker="bytesort.yaml")
+        else:
+            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7])
+
 
         if results and results[0].boxes.data is not None:
             boxes = results[0].boxes.xyxy.cpu()
@@ -190,6 +198,7 @@ def main():
     Main method to run the detect_vehicles function with arguments specified via CLI.
     --model to specify the YOLO model to use.
     --video to specify the video file to process.
+    --tracker to optionally specify the tracking method.
     """
     # Define the CLI arguments
     parser = argparse.ArgumentParser(description="Run YOLO vehicle detection on a video.")
@@ -206,11 +215,19 @@ def main():
         help="Video file to process."
     )
 
+    parser.add_argument(
+        "--tracker", 
+        default="yolo", 
+        choices=["yolo", "bytetrack", "botsort"],
+        help="Specify the tracking method to use ('yolo', 'botsort', or 'bytetrack'). Defaults to 'yolo'."
+    )
+
     # Parse the arguments
     args = parser.parse_args()
 
-    # Load the specified YOLO model
+    # Load the specified YOLO model & tracker
     model = YOLO(args.model)
+    tracker=args.tracker
 
     # Open the video file
     video_cap = cv2.VideoCapture(args.video)
@@ -218,7 +235,7 @@ def main():
         raise FileNotFoundError(f"Could not open video file: {args.video}")
 
     # Call detect_vehicles
-    detect_vehicles(model, video_cap, args.video)
+    detect_vehicles(model, video_cap, args.video, tracker)
 
 if __name__ == "__main__":
     main()
