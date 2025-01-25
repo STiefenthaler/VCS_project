@@ -1,0 +1,36 @@
+Total truth for incoming car: 2
+Total detected for incoming car: 4
+True Positives (TP) for incoming car: 1
+False Positives (FP) for incoming car: 3
+False Negatives (FN) for incoming car: 1
+Precision for incoming car: 0.25
+Recall for incoming car: 0.50
+F1-Score for incoming car: 0.33
+
+Total truth for incoming truck: 3
+Total detected for incoming truck: 4
+True Positives (TP) for incoming truck: 3
+False Positives (FP) for incoming truck: 1
+False Negatives (FN) for incoming truck: 0
+Precision for incoming truck: 0.75
+Recall for incoming truck: 1.00
+F1-Score for incoming truck: 0.86
+
+Total truth for outgoing car: 9
+Total detected for outgoing car: 10
+True Positives (TP) for outgoing car: 5
+False Positives (FP) for outgoing car: 5
+False Negatives (FN) for outgoing car: 4
+Precision for outgoing car: 0.50
+Recall for outgoing car: 0.56
+F1-Score for outgoing car: 0.53
+
+Total truth for outgoing truck: 2
+Total detected for outgoing truck: 4
+True Positives (TP) for outgoing truck: 2
+False Positives (FP) for outgoing truck: 2
+False Negatives (FN) for outgoing truck: 0
+Precision for outgoing truck: 0.50
+Recall for outgoing truck: 1.00
+F1-Score for outgoing truck: 0.67
+
