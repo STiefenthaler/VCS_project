@@ -4,6 +4,7 @@ import cv2
 from collections import defaultdict
 import numpy as np
 from deep_sort_realtime.deepsort_tracker import DeepSort
+import os
 
 # Assign directions to lanes
 lane_directions = {
@@ -61,7 +62,7 @@ video_line_positions = {
 def get_line_positions(video_name):
     return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
 
-def detect_vehicles(model, cap, video_name, tracker="default"):
+def detect_vehicles(model, cap, video_name, tracker, model_name, tracker_name):
     """
     Processes the video using the specified YOLO model and applies vehicle detection.
     Args:
@@ -72,6 +73,10 @@ def detect_vehicles(model, cap, video_name, tracker="default"):
     print(f"Processing video '{video_name}' with tracker '{tracker}'...")
     class_list = model.names
     paused = False
+
+    # Get fps and frame_counter to find timestamps when model detects an object
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_counter = 0
 
     # Get the line positions for the current video
     line_positions = get_line_positions(video_name)
@@ -95,13 +100,28 @@ def detect_vehicles(model, cap, video_name, tracker="default"):
         ret, frame = cap.read()
         if not ret:
             break
+
+        # Calculate the timestamp using the frame count and fps
+        frame_counter += 1
+        print("frame: " + str(frame_counter))
+        current_time_sec = frame_counter / fps
+        current_minute = int(current_time_sec // 60)
+        current_second = int(current_time_sec % 60)
+        current_millisecond = int((current_time_sec % 1) * 1000)
+        detected_elements = {}
+
+         # Display the time on the frame
+        time_text = f"Time: {current_minute:02}:{current_second:02}.{current_millisecond:03}"
+        print(time_text)
+        formatted_time = f"{current_minute:02}:{current_second:02}.{current_millisecond:03}"
+
         
         print(tracker)
 
         if tracker == "botsort":
             results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7], tracker="botsort.yaml")
-        elif tracker == "bytesort":
-            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7], tracker="bytesort.yaml")
+        elif tracker == "bytetrack":
+            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7], tracker="bytetrack.yaml")
         else:
             results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7])
 
@@ -152,6 +172,9 @@ def detect_vehicles(model, cap, video_name, tracker="default"):
                         elif direction == "outgoing" and cy < outgoing_line_y and track_id not in crossed_ids["outgoing"]:
                             crossed_ids["outgoing"].add(track_id)
                             class_counts["outgoing"][class_name] += 1
+                        
+                        detected_elements[formatted_time] = dict(class_counts)
+
 
             # Display the counts on the frame
             y_offset = 30
@@ -170,6 +193,24 @@ def detect_vehicles(model, cap, video_name, tracker="default"):
         # Show the frame
         output.write(frame)
         cv2.imshow("YOLO Object Tracking & Counting", frame)
+
+        folder_name = os.path.splitext(video_name)[0]
+        os.makedirs(folder_name, exist_ok=True)
+
+        # Construct the output file path
+        output_file = os.path.join(
+            folder_name,
+            f"{os.path.splitext(model_name)[0]}_{os.path.splitext(video_name)[0]}_{os.path.splitext(tracker_name)[0]}_detected_elements.txt"
+        )
+
+        
+        # write detected elements file
+        with open(output_file, "a") as file:
+            for key, value in detected_elements.items():
+                timestamp = list(detected_elements.keys())[0]
+                formatted_output = "'" + str(timestamp) +"' : {'incoming': " +str(dict(detected_elements[timestamp]['incoming'])) + ", 'outgoing': " + str(dict(detected_elements[timestamp]['outgoing'])) + "},"
+                file.write(f"{formatted_output}\n")
+
 
         # Exit video if 'q' key is pressed
         # Pause video if 'p' key is pressed
@@ -235,7 +276,7 @@ def main():
         raise FileNotFoundError(f"Could not open video file: {args.video}")
 
     # Call detect_vehicles
-    detect_vehicles(model, video_cap, args.video, tracker)
+    detect_vehicles(model, video_cap, args.video, tracker, args.model, args.tracker)
 
 if __name__ == "__main__":
     main()
