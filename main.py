@@ -4,6 +4,15 @@ import cv2
 from collections import defaultdict
 import numpy as np
 
+# Load the YOLO models
+#Fine_tuned_model = YOLO('yolov8_finetuned.pt')
+#yolo8 = YOLO('yolov8m.pt')
+#yolo11 = YOLO('yolo11l.pt')
+# Open the video files
+#heavy_fog_vid = cv2.VideoCapture('heavy_foggy_road.mp4')
+#medium_fog_vid = cv2.VideoCapture('foggy_road.mp4')
+#sunny_vid = cv2.VideoCapture('sunny_road.mp4')
+#rainy_vid = cv2.VideoCapture('rainy_road.mp4')
 # Assign directions to lanes
 lane_directions = {
     "foggy_lane_1": "incoming",
@@ -60,7 +69,7 @@ video_line_positions = {
 def get_line_positions(video_name):
     return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
 
-def detect_vehicles(model, cap, video_name, model_name):
+def detect_vehicles(model, cap, video_name):
     """
     Processes the video using the specified YOLO model and applies vehicle detection.
     Args:
@@ -71,10 +80,6 @@ def detect_vehicles(model, cap, video_name, model_name):
     print(f"Processing video '{video_name}'...")
     class_list = model.names
     paused = False
-
-    # Get fps and frame_counter to find timestamps when model detects an object
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_counter = 0
 
     # Get the line positions for the current video
     line_positions = get_line_positions(video_name)
@@ -99,20 +104,6 @@ def detect_vehicles(model, cap, video_name, model_name):
         if not ret:
             break
 
-        # Calculate the timestamp using the frame count and fps
-        frame_counter += 1
-        print("frame: " + str(frame_counter))
-        current_time_sec = frame_counter / fps
-        current_minute = int(current_time_sec // 60)
-        current_second = int(current_time_sec % 60)
-        current_millisecond = int((current_time_sec % 1) * 1000)
-        detected_elements = {}
-
-        # Display the time on the frame
-        time_text = f"Time: {current_minute:02}:{current_second:02}.{current_millisecond:03}"
-        print(time_text)
-        formatted_time = f"{current_minute:02}:{current_second:02}.{current_millisecond:03}"
-
         # Run YOLO tracking on the frame
         results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7])  # Maintain only transportation-relevant classes
 
@@ -129,7 +120,7 @@ def detect_vehicles(model, cap, video_name, model_name):
             # Draw the incoming and outgoing lines
             cv2.line(frame, (0, incoming_line_y), (frame.shape[1], incoming_line_y), (0, 255, 0), 2)
             cv2.putText(frame, 'Incoming line', (0, incoming_line_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-            
+
             cv2.line(frame, (0, outgoing_line_y), (frame.shape[1], outgoing_line_y), (255, 0, 0), 2)
             cv2.putText(frame, 'Outgoing line', (0, outgoing_line_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
@@ -159,12 +150,9 @@ def detect_vehicles(model, cap, video_name, model_name):
                         if direction == "incoming" and cy > incoming_line_y and track_id not in crossed_ids["incoming"]:
                             crossed_ids["incoming"].add(track_id)
                             class_counts["incoming"][class_name] += 1
-
                         elif direction == "outgoing" and cy < outgoing_line_y and track_id not in crossed_ids["outgoing"]:
                             crossed_ids["outgoing"].add(track_id)
                             class_counts["outgoing"][class_name] += 1
-                        
-                        detected_elements[formatted_time] = dict(class_counts)
 
             # Display the counts on the frame
             y_offset = 30
@@ -183,13 +171,6 @@ def detect_vehicles(model, cap, video_name, model_name):
         # Show the frame
         output.write(frame)
         cv2.imshow("YOLO Object Tracking & Counting", frame)
-        
-        # write detected elements file
-        with open(str(model_name).split(".")[0] +"_" + str(video_name).split(".")[0] + "_detected_elements.txt", "a") as file:
-            for key, value in detected_elements.items():
-                timestamp = list(detected_elements.keys())[0]
-                formatted_output = str(timestamp) +": {incoming: "+str(dict(detected_elements[timestamp]['incoming'])) + ", outgoing: " + str(dict(detected_elements[timestamp]['outgoing'])) + "}"
-                file.write(f"{formatted_output}\n")
 
         # Exit video if 'q' key is pressed
         # Pause video if 'p' key is pressed
@@ -200,9 +181,9 @@ def detect_vehicles(model, cap, video_name, model_name):
             paused = not paused
             while paused:
                 key = cv2.waitKey(1) & 0xFF
-                if key == ord('p'):
+                if key == ord('p'):  # Riprendi
                     paused = False
-                elif key == ord('q'):
+                elif key == ord('q'):  # Esci
                     paused = False
                     cap.release()
                     cv2.destroyAllWindows()
@@ -246,7 +227,6 @@ def main():
         raise FileNotFoundError(f"Could not open video file: {args.video}")
 
     # Call detect_vehicles
-    detect_vehicles(model, video_cap, args.video, args.model)
+    detect_vehicles(model, video_cap, args.video)
 
 if __name__ == "__main__":
-    main()
