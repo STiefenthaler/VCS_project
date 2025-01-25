@@ -1,0 +1,25 @@
+{
+"00:00.333": {"incoming": {'car': 1}, "outgoing": {'car': 0}},
+"00:01.233": {"incoming": {'car': 1}, "outgoing": {'car': 1}},
+"00:01.399": {"incoming": {'car': 1}, "outgoing": {'car': 2}},
+"00:02.133": {"incoming": {'car': 2}, "outgoing": {'car': 2}},
+"00:02.566": {"incoming": {'car': 2}, "outgoing": {'car': 3}},
+"00:03.133": {"incoming": {'car': 3}, "outgoing": {'car': 3}},
+"00:03.299": {"incoming": {'car': 3}, "outgoing": {'car': 4}},
+"00:03.833": {"incoming": {'car': 3}, "outgoing": {'car': 5}},
+"00:04.599": {"incoming": {'car': 4}, "outgoing": {'car': 5}},
+"00:04.633": {"incoming": {'car': 5}, "outgoing": {'car': 5}},
+"00:05.633": {"incoming": {'car': 5}, "outgoing": {'car': 6}},
+"00:05.833": {"incoming": {'car': 6}, "outgoing": {'car': 6}},
+"00:06.000": {"incoming": {'car': 7}, "outgoing": {'car': 6}},
+"00:06.400": {"incoming": {'car': 7}, "outgoing": {'car': 7}},
+"00:07.299": {"incoming": {'car': 8}, "outgoing": {'car': 7}},
+"00:07.400": {"incoming": {'car': 8}, "outgoing": {'car': 8}}
+}
+
+
+
+
+
+
+
