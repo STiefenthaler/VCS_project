@@ -246,7 +246,7 @@ def main():
     parser.add_argument(
         "--model", 
         required=True, 
-        choices=['yolov8_finetuned.pt', 'yolov8m.pt', 'yolo11l.pt'],
+        choices=['yolov8n.pt', 'Dawn-8n-agumented.pt', 'Dawn-8n.pt', 'mixed-8n.pt', 'yolov8m.pt', 'Dawn-8m-agumented.pt', 'Dawn-8m.pt', 'mix-8m.pt'],
         help="Path to the YOLO model to use for detection."
     )
     parser.add_argument(
