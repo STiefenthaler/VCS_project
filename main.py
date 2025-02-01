@@ -3,16 +3,9 @@ import argparse
 import cv2
 from collections import defaultdict
 import numpy as np
+from deep_sort_realtime.deepsort_tracker import DeepSort
+import os
 
-# Load the YOLO models
-#Fine_tuned_model = YOLO('yolov8_finetuned.pt')
-#yolo8 = YOLO('yolov8m.pt')
-#yolo11 = YOLO('yolo11l.pt')
-# Open the video files
-#heavy_fog_vid = cv2.VideoCapture('heavy_foggy_road.mp4')
-#medium_fog_vid = cv2.VideoCapture('foggy_road.mp4')
-#sunny_vid = cv2.VideoCapture('sunny_road.mp4')
-#rainy_vid = cv2.VideoCapture('rainy_road.mp4')
 # Assign directions to lanes
 lane_directions = {
     "foggy_lane_1": "incoming",
@@ -61,15 +54,15 @@ def get_relevant_lanes(video_name):
 # Define line positions for each video
 video_line_positions = {
     "foggy_road.mp4": {"incoming_line_y": 470, "outgoing_line_y": 295},
-    "heavy_foggy_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
-    "sunny_road.mp4": {"incoming_line_y": 300, "outgoing_line_y": 190},
+    "heavy_foggy_road.mp4": {"incoming_line_y": 280, "outgoing_line_y": 190},
+    "sunny_road.mp4": {"incoming_line_y": 280, "outgoing_line_y": 190},
     "rainy_road.mp4": {"incoming_line_y": 450, "outgoing_line_y": 320},
 }
 
 def get_line_positions(video_name):
     return video_line_positions.get(video_name, {"incoming_line_y": 300, "outgoing_line_y": 200})
 
-def detect_vehicles(model, cap, video_name):
+def detect_vehicles(model, cap, video_name, tracker, model_name, tracker_name):
     """
     Processes the video using the specified YOLO model and applies vehicle detection.
     Args:
@@ -77,9 +70,13 @@ def detect_vehicles(model, cap, video_name):
         video_cap: Video capture object.
         video_name: Name of the video to use.
     """
-    print(f"Processing video '{video_name}'...")
+    print(f"Processing video '{video_name}' with tracker '{tracker}'...")
     class_list = model.names
     paused = False
+
+    # Get fps and frame_counter to find timestamps when model detects an object
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_counter = 0
 
     # Get the line positions for the current video
     line_positions = get_line_positions(video_name)
@@ -104,8 +101,30 @@ def detect_vehicles(model, cap, video_name):
         if not ret:
             break
 
-        # Run YOLO tracking on the frame
-        results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7])  # Maintain only transportation-relevant classes
+        # Calculate the timestamp using the frame count and fps
+        frame_counter += 1
+        print("frame: " + str(frame_counter))
+        current_time_sec = frame_counter / fps
+        current_minute = int(current_time_sec // 60)
+        current_second = int(current_time_sec % 60)
+        current_millisecond = int((current_time_sec % 1) * 1000)
+        detected_elements = {}
+
+         # Display the time on the frame
+        time_text = f"Time: {current_minute:02}:{current_second:02}.{current_millisecond:03}"
+        print(time_text)
+        formatted_time = f"{current_minute:02}:{current_second:02}.{current_millisecond:03}"
+
+        
+        print(tracker)
+
+        if tracker == "botsort":
+            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7], tracker="botsort.yaml")
+        elif tracker == "bytetrack":
+            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7], tracker="bytetrack.yaml")
+        else:
+            results = model.track(frame, persist=True, classes=[1, 2, 3, 5, 6, 7])
+
 
         if results and results[0].boxes.data is not None:
             boxes = results[0].boxes.xyxy.cpu()
@@ -120,7 +139,7 @@ def detect_vehicles(model, cap, video_name):
             # Draw the incoming and outgoing lines
             cv2.line(frame, (0, incoming_line_y), (frame.shape[1], incoming_line_y), (0, 255, 0), 2)
             cv2.putText(frame, 'Incoming line', (0, incoming_line_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-
+            
             cv2.line(frame, (0, outgoing_line_y), (frame.shape[1], outgoing_line_y), (255, 0, 0), 2)
             cv2.putText(frame, 'Outgoing line', (0, outgoing_line_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
@@ -153,6 +172,9 @@ def detect_vehicles(model, cap, video_name):
                         elif direction == "outgoing" and cy < outgoing_line_y and track_id not in crossed_ids["outgoing"]:
                             crossed_ids["outgoing"].add(track_id)
                             class_counts["outgoing"][class_name] += 1
+                        
+                        detected_elements[formatted_time] = dict(class_counts)
+
 
             # Display the counts on the frame
             y_offset = 30
@@ -171,6 +193,24 @@ def detect_vehicles(model, cap, video_name):
         # Show the frame
         output.write(frame)
         cv2.imshow("YOLO Object Tracking & Counting", frame)
+
+        folder_name = os.path.splitext(video_name)[0]
+        os.makedirs(folder_name, exist_ok=True)
+
+        # Construct the output file path
+        output_file = os.path.join(
+            folder_name,
+            f"{os.path.splitext(model_name)[0]}_{os.path.splitext(video_name)[0]}_{os.path.splitext(tracker_name)[0]}_detected_elements.txt"
+        )
+
+        
+        # write detected elements file
+        with open(output_file, "a") as file:
+            for key, value in detected_elements.items():
+                timestamp = list(detected_elements.keys())[0]
+                formatted_output = "'" + str(timestamp) +"' : {'incoming': " +str(dict(detected_elements[timestamp]['incoming'])) + ", 'outgoing': " + str(dict(detected_elements[timestamp]['outgoing'])) + "},"
+                file.write(f"{formatted_output}\n")
+
 
         # Exit video if 'q' key is pressed
         # Pause video if 'p' key is pressed
@@ -199,13 +239,14 @@ def main():
     Main method to run the detect_vehicles function with arguments specified via CLI.
     --model to specify the YOLO model to use.
     --video to specify the video file to process.
+    --tracker to optionally specify the tracking method.
     """
     # Define the CLI arguments
     parser = argparse.ArgumentParser(description="Run YOLO vehicle detection on a video.")
     parser.add_argument(
         "--model", 
         required=True, 
-        choices=['yolov8_finetuned.pt', 'yolov8m.pt', 'yolo11l.pt'],
+        choices=['yolov8n.pt', 'Dawn-8n-agumented.pt', 'Dawn-8n.pt', 'mixed-8n.pt', 'yolov8m.pt', 'Dawn-8m-agumented.pt', 'Dawn-8m.pt', 'mix-8m.pt'],
         help="Path to the YOLO model to use for detection."
     )
     parser.add_argument(
@@ -215,11 +256,19 @@ def main():
         help="Video file to process."
     )
 
+    parser.add_argument(
+        "--tracker", 
+        default="yolo", 
+        choices=["yolo", "bytetrack", "botsort"],
+        help="Specify the tracking method to use ('yolo', 'botsort', or 'bytetrack'). Defaults to 'yolo'."
+    )
+
     # Parse the arguments
     args = parser.parse_args()
 
-    # Load the specified YOLO model
+    # Load the specified YOLO model & tracker
     model = YOLO(args.model)
+    tracker=args.tracker
 
     # Open the video file
     video_cap = cv2.VideoCapture(args.video)
@@ -227,6 +276,7 @@ def main():
         raise FileNotFoundError(f"Could not open video file: {args.video}")
 
     # Call detect_vehicles
-    detect_vehicles(model, video_cap, args.video)
+    detect_vehicles(model, video_cap, args.video, tracker, args.model, args.tracker)
 
 if __name__ == "__main__":
+    main()
