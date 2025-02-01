@@ -1,6 +1,6 @@
 # Vehicle Detection and Tracking System
 
-This project is developed as part of a university course to demonstrate advanced vehicle detection and tracking techniques under various weather conditions. Using the YOLO object detection model combined with the DeepSort tracking algorithm, the system accurately tracks vehicle movements in real-time.
+This project is developed as part of a university course to demonstrate advanced vehicle detection and tracking techniques under various weather conditions. Using the YOLO object detection model combined with several tracking algorithms, the system accurately tracks vehicle movements in real-time.
 
 ## **Key Features**
 - **Object Detection:** Utilizes YOLO for fast and accurate vehicle detection.
