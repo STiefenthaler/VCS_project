@@ -1,0 +1,18 @@
+Total truth for incoming car: 8
+Total detected for incoming car: 10
+True Positives (TP) for incoming car: 8
+False Positives (FP) for incoming car: 2
+False Negatives (FN) for incoming car: 0
+Precision for incoming car: 0.80
+Recall for incoming car: 1.00
+F1-Score for incoming car: 0.89
+
+Total truth for outgoing car: 8
+Total detected for outgoing car: 8
+True Positives (TP) for outgoing car: 5
+False Positives (FP) for outgoing car: 3
+False Negatives (FN) for outgoing car: 3
+Precision for outgoing car: 0.62
+Recall for outgoing car: 0.62
+F1-Score for outgoing car: 0.62
+
